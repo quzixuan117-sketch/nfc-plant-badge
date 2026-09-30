@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NFC 植物心情胸牌</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 32px 24px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .plant-avatar {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .plant-avatar .emoji {
+            font-size: 80px;
+            display: block;
+            margin-bottom: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .plant-avatar .mood {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .plant-avatar .hint {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .gauges {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 24px;
+        }
+
+        .gauge {
+            text-align: center;
+        }
+
+        .gauge-circle {
+            width: 110px;
+            height: 110px;
+            position: relative;
+        }
+
+        .gauge-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: #e8e8e8;
+            stroke-width: 8;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .gauge-fill.temp {
+            stroke: #ff6b6b;
+        }
+
+        .gauge-fill.humi {
+            stroke: #4ecdc4;
+        }
+
+        .gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .gauge-label {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-badge {
+            text-align: center;
+            padding: 14px 20px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.comfort {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            color: #2d6a4f;
+        }
+
+        .status-badge.dry {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #8b4513;
+        }
+
+        .status-badge.wet {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #1a5276;
+        }
+
+        .status-badge .status-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .status-badge .status-desc {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 8px;
+        }
+
+        .update-time {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .plant-avatar .emoji.pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>🌿 植物心情胸牌</h1>
+            <div class="subtitle">NFC Plant Mood Badge</div>
+        </div>
+
+        <div class="plant-avatar">
+            <span class="emoji" id="plantEmoji">🌱</span>
+            <div class="mood" id="plantMood">加载中...</div>
+            <div class="hint" id="tempHint"></div>
+        </div>
+
+        <div class="gauges">
+            <div class="gauge">
+                <div class="gauge-circle">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle class="gauge-bg" cx="55" cy="55" r="45"/>
+                        <circle class="gauge-fill temp" cx="55" cy="55" r="45"
+                            stroke-dasharray="283"
+                            stroke-dashoffset="283"
+                            id="tempCircle"/>
+                    </svg>
+                    <div class="gauge-value" id="tempValue">--</div>
+                </div>
+                <div class="gauge-label">温度 (°C)</div>
+            </div>
+            <div class="gauge">
+                <div class="gauge-circle">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle class="gauge-bg" cx="55" cy="55" r="45"/>
+                        <circle class="gauge-fill humi" cx="55" cy="55" r="45"
+                            stroke-dasharray="283"
+                            stroke-dashoffset="283"
+                            id="humiCircle"/>
+                    </svg>
+                    <div class="gauge-value" id="humiValue">--</div>
+                </div>
+                <div class="gauge-label">湿度 (%)</div>
+            </div>
+        </div>
+
+        <div class="status-badge" id="statusBadge">
+            <div class="status-title" id="statusTitle">--</div>
+            <div class="status-desc" id="statusDesc">--</div>
+        </div>
+
+        <div class="update-time" id="updateTime"></div>
+
+        <div class="footer">
+            OpenHarmony Hi3861 · NFC Badge
+        </div>
+    </div>
+
+    <script>
+        function getParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        function setGauge(id, value, min, max) {
+            const circle = document.getElementById(id);
+            const circumference = 2 * Math.PI * 45;
+            const percent = Math.max(0, Math.min(1, (value - min) / (max - min)));
+            const offset = circumference * (1 - percent);
+            circle.style.strokeDashoffset = offset;
+        }
+
+        const stateConfig = {
+            COMFORT: {
+                emoji: '😊',
+                mood: '我状态很好~',
+                class: 'comfort',
+                title: '🌱 舒适',
+                desc: '温度和湿度都很适宜，继续保持！',
+                pulse: false
+            },
+            DRY: {
+                emoji: '😫',
+                mood: '我渴了，快浇水！',
+                class: 'dry',
+                title: '🔥 干渴',
+                desc: '土壤湿度偏低，请及时补充水分。',
+                pulse: true
+            },
+            WET: {
+                emoji: '😵',
+                mood: '水太多，别浇了！',
+                class: 'wet',
+                title: '💧 过湿',
+                desc: '土壤湿度过高，注意通风排水。',
+                pulse: true
+            }
+        };
+
+        function render() {
+            const temp = parseFloat(getParam('temp')) || 24.5;
+            const humi = parseFloat(getParam('humi')) || 55.0;
+            const state = (getParam('state') || 'COMFORT').toUpperCase();
+            const zone = (getParam('zone') || 'NORMAL').toUpperCase();
+
+            const config = stateConfig[state] || stateConfig.COMFORT;
+
+            document.getElementById('tempValue').textContent = temp.toFixed(1);
+            document.getElementById('humiValue').textContent = humi.toFixed(1);
+
+            setGauge('tempCircle', temp, -10, 50);
+            setGauge('humiCircle', humi, 0, 100);
+
+            const emojiEl = document.getElementById('plantEmoji');
+            emojiEl.textContent = config.emoji;
+            emojiEl.className = 'emoji' + (config.pulse ? ' pulse' : '');
+
+            document.getElementById('plantMood').textContent = config.mood;
+
+            const hints = {
+                COLD: '（当前偏冷）',
+                HOT: '（当前偏热）',
+                NORMAL: ''
+            };
+            document.getElementById('tempHint').textContent = hints[zone] || '';
+
+            const badge = document.getElementById('statusBadge');
+            badge.className = 'status-badge ' + config.class;
+            document.getElementById('statusTitle').textContent = config.title;
+            document.getElementById('statusDesc').textContent = config.desc;
+
+            const now = new Date();
+            document.getElementById('updateTime').textContent =
+                '更新于 ' + now.toLocaleString('zh-CN');
+        }
+
+        render();
+    </script>
+</body>
+</html>
